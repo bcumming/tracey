@@ -19,7 +19,7 @@ struct event {
     /// The trace id which can be used to look up the name.
     trace_id id = nop_trace_id;
     /// The thread on which the event occurred
-    thread_id tid;
+    process_id tid;
     /// The type of event.
     event_kind kind;
 };

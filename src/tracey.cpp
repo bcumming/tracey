@@ -3,6 +3,9 @@
 #include <string_view>
 #include <vector>
 
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+
 #include <tracey/tracey.hpp>
 
 #include "event.hpp"
@@ -18,6 +21,7 @@ struct context_impl {
     std::atomic<std::size_t> event_count_ = 0;
     std::size_t capacity_;
     timestamp_ns t_start_;
+    process_id pid_;
 
     context_impl(std::size_t capacity);
 
@@ -25,11 +29,12 @@ struct context_impl {
     void begin_event(trace_id id);
     void begin_event(std::string_view name);
     void end_event();
+    void to_json(std::ostream&);
     trace_id id(std::string_view name);
 };
 
 context_impl::context_impl(std::size_t capacity):
-    events_(capacity), capacity_(capacity)
+    events_(capacity), capacity_(capacity), pid_(local_process_id())
 {}
 
 void context_impl::begin_event(trace_id id) {
@@ -65,16 +70,36 @@ void context_impl::reset_clock() {
     t_start_ = clock_ns();
 }
 
+void context_impl::to_json(std::ostream& fid) {
+    fid << "[";
+
+    char buffer[1024];
+
+    bool first = true;
+    for (std::size_t i=0; i<event_count_; ++i) {
+        const auto& e = events_[i];
+        if (!first) {
+            fmt::print(fid, ",\n ");
+        }
+        first = false;
+        if (e.kind==event_kind::begin) {
+            fmt::print(fid, "{{\"name\":\"{}\",\"ph\":\"B\",", ids_.name(e.id));
+        }
+        else {
+            fmt::print(fid, "{{\"ph\":\"E\",");
+        }
+        fmt::print(fid, "\"pid\":{},\"tid\":{},\"ts\":{:.3f}}}", pid_, e.tid, (e.ts-t_start_)/1000.);
+    }
+
+    fmt::print(fid, "]\n");
+}
+
 context::context() {
     impl_ = new context_impl(1<<20);
     impl_->reset_clock();
 }
 
 context::~context() {
-    std::cout << ":: events " << impl_->event_count_ << "\n";
-    for (auto i=0; i<impl_->event_count_; ++i) {
-        std::cout << "  " << impl_->events_[i] << "\n";
-    }
     delete impl_;
 }
 
@@ -95,6 +120,10 @@ void context::reset_clock() {
 
 trace_id context::id(std::string_view name) {
     return impl_->id(name);
+}
+
+void context::to_json(std::ostream& fid) {
+    return impl_->to_json(fid);
 }
 
 } // namespace tracey
