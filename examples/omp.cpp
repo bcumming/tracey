@@ -16,28 +16,35 @@ int main() {
         std::cout << "thread " << omp_get_thread_num() << "\n";
     }
 
-    auto id_io = ctx.id("io");
+    auto id_foo = ctx.id("foo");
+    auto id_foo1 = ctx.id("foo-1");
+    auto id_foo2 = ctx.id("foo-2");
     auto id_run = ctx.id("run");
     #pragma omp parallel
     {
-        auto tid = omp_get_thread_num();
         #pragma omp critical
         {
-            ctx.begin_event(id_io);
-            std::this_thread::sleep_for((tid+1)*10ms);
+            ctx.begin_event(id_foo);
+            auto tid = omp_get_thread_num();
+
+            ctx.begin_event(id_foo1);
+            std::this_thread::sleep_for((tid+1)*1ms);
+            ctx.end_event();
+
+            ctx.begin_event(id_foo2);
+            std::this_thread::sleep_for((tid+1)*2ms);
+            ctx.end_event();
+
             ctx.end_event();
         }
     }
 
     #pragma omp parallel
     {
+        ctx.begin_event(id_run);
         auto tid = omp_get_thread_num();
-        #pragma omp critical
-        {
-            ctx.begin_event(id_run);
-            std::this_thread::sleep_for((tid+1)*1ms);
-            ctx.end_event();
-        }
+        std::this_thread::sleep_for((tid+1)*1ms);
+        ctx.end_event();
     }
 
     auto fid = std::ofstream("omp-prof.json");
