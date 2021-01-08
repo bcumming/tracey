@@ -73,8 +73,6 @@ void context_impl::reset_clock() {
 void context_impl::to_json(std::ostream& fid) {
     fid << "[";
 
-    char buffer[1024];
-
     bool first = true;
     for (std::size_t i=0; i<event_count_; ++i) {
         const auto& e = events_[i];
