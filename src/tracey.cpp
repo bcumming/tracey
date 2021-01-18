@@ -35,7 +35,9 @@ struct context_impl {
 
 context_impl::context_impl(std::size_t capacity):
     events_(capacity), capacity_(capacity), pid_(local_process_id())
-{}
+{
+    std::cout << "TRACEY: init\n";
+}
 
 void context_impl::begin_event(trace_id id) {
     if (auto i=event_count_++; i<capacity_) {

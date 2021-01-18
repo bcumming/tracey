@@ -17,7 +17,8 @@ add_library(trace::tracey ALIAS tracey)
 set(tracey_header_path ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(tracey_headers ${tracey_header_path}/tracey/tracey.hpp)
 
-target_include_directories(tracey PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(tracey PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                                         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 find_package(fmt REQUIRED)
 target_link_libraries(tracey PRIVATE fmt::fmt)
